@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Backups (except intentionally tracked ones)
+*.backup.json
+*backup*.json
+!images_metadata.backup_before_new.json
+
+# Logs
+*.log
+validation_run.log
+*.output
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp
+
+# Archive folder (if you don't want to track old scripts)
+# /archive/
+
+# Node modules (if added in future)
+node_modules/
+
+# Test output
+/private/

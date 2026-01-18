@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editorial Feed Images - Browser</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .header {
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 2rem 2rem 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: #1a1a1a;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .aspect-toggle {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            display: flex;
+            background: #f0f0f0;
+            border-radius: 8px;
+            padding: 4px;
+        }
+
+        .aspect-toggle-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #666;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .aspect-toggle-btn.active {
+            background: white;
+            color: #1a1a1a;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .aspect-toggle-btn:hover:not(.active) {
+            color: #1a1a1a;
+        }
+
+        .search-bar {
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 1rem 3.5rem 1rem 1.5rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 50px;
+            font-size: 1.125rem;
+            outline: none;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+
+        .search-input:focus {
+            border-color: #4a90e2;
+            box-shadow: 0 4px 16px rgba(74,144,226,0.15);
+        }
+
+        .search-clear {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            border: none;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            padding: 0;
+        }
+
+        .search-clear:hover {
+            background: #d0d0d0;
+        }
+
+        .search-clear.visible {
+            display: flex;
+        }
+
+        .search-clear svg {
+            width: 14px;
+            height: 14px;
+            fill: #666;
+        }
+
+        .stats {
+            font-size: 0.875rem;
+            color: #999;
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        .container {
+            padding: 2rem;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+            gap: 1rem;
+        }
+
+        .card {
+            position: relative;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            aspect-ratio: 1 / 1.3;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-color: #f0f0f0;
+            image-rendering: auto;
+            -webkit-backface-visibility: hidden;
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 20px rgba(0,0,0,0.25);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 24px;
+            padding: 2px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.8), rgba(0,0,0,0.5));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+            mix-blend-mode: overlay;
+            z-index: 1;
+        }
+
+        body.full-image .card {
+            aspect-ratio: 1 / 1;
+        }
+
+        .card-title-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            padding: 1rem 1.5rem 1.5rem;
+            color: white;
+            font-size: 22pt;
+            font-weight: 600;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        body.full-image .card-title-overlay {
+            display: none;
+        }
+
+        .card-content {
+            padding: 1rem;
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #1a1a1a;
+        }
+
+        .card-description {
+            font-size: 0.875rem;
+            color: #666;
+            line-height: 1.4;
+            margin-bottom: 0.75rem;
+        }
+
+        .card-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+        }
+
+        .tag {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            background: #f0f0f0;
+            border-radius: 4px;
+            color: #666;
+        }
+
+        .tag.conceptual { background: #e8f5e9; color: #2e7d32; }
+        .tag.subject { background: #fff3e0; color: #e65100; }
+        .tag.color { background: #fce4ec; color: #c2185b; }
+        .tag.style { background: #e3f2fd; color: #1565c0; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            padding: 2rem;
+            overflow: auto;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 512px;
+            width: 100%;
+            max-height: 90vh;
+            overflow: auto;
+        }
+
+        .modal-image {
+            width: 512px;
+            height: 512px;
+            max-width: 100%;
+            object-fit: contain;
+            background: #f0f0f0;
+            margin: 0 auto;
+            display: block;
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .modal-description {
+            color: #666;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .modal-tags-section {
+            margin-bottom: 1rem;
+        }
+
+        .modal-tags-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .modal-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .close-modal:hover {
+            background: #f0f0f0;
+        }
+
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            text-decoration: none;
+            margin-top: 1rem;
+        }
+
+        .download-btn:hover {
+            background: #357abd;
+        }
+
+        .color-palette {
+            display: flex;
+            gap: 0.5rem;
+            margin: 1rem 0;
+            padding: 1rem;
+            background: #f8f8f8;
+            border-radius: 8px;
+        }
+
+        .color-swatch {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            border: 2px solid rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .color-palette-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #999;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="aspect-toggle">
+            <button class="aspect-toggle-btn active" data-mode="preview">Preview</button>
+            <button class="aspect-toggle-btn" data-mode="full">Full Image</button>
+        </div>
+        <h1>Editorial Feed Images</h1>
+        <div class="search-bar">
+            <input
+                type="text"
+                class="search-input"
+                id="searchInput"
+                placeholder="Search images..."
+            >
+            <button class="search-clear" id="searchClear" aria-label="Clear search">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>
+            </button>
+        </div>
+        <div class="stats" id="stats"></div>
+    </div>
+
+    <div class="container">
+        <div class="grid" id="grid"></div>
+        <div class="no-results" id="noResults" style="display: none;">
+            No images found matching your search.
+        </div>
+        <div class="loading" id="loading">
+            Loading images...
+        </div>
+    </div>
+
+    <div class="modal" id="modal">
+        <button class="close-modal" onclick="closeModal()">&times;</button>
+        <div class="modal-content" id="modalContent"></div>
+    </div>
+
+    <script>
+        let allImages = [];
+        let filteredImages = [];
+        let searchQuery = '';
+
+        // Shuffle array using Fisher-Yates algorithm
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        // Load metadata
+        async function loadImages() {
+            try {
+                const response = await fetch('images_metadata.json?v=' + Date.now());
+                allImages = await response.json();
+
+                // Randomize the order
+                allImages = shuffleArray(allImages);
+
+                filteredImages = allImages;
+                renderImages();
+                updateStats();
+                document.getElementById('loading').style.display = 'none';
+            } catch (error) {
+                document.getElementById('loading').innerHTML = 'Error loading images. Make sure images_metadata.json exists.';
+                console.error('Error loading images:', error);
+            }
+        }
+
+        // Common color keywords
+        const colorKeywords = [
+            'red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink', 'gold', 'golden',
+            'teal', 'cyan', 'magenta', 'violet', 'indigo', 'turquoise', 'coral', 'salmon',
+            'navy', 'lime', 'mint', 'peach', 'lavender', 'plum', 'rust', 'bronze', 'copper',
+            'amber', 'rose', 'burgundy', 'crimson', 'scarlet', 'maroon', 'vermillion',
+            'emerald', 'jade', 'olive', 'chartreuse', 'cobalt', 'azure', 'cerulean',
+            'white', 'black', 'gray', 'grey', 'silver', 'brown', 'tan', 'beige'
+        ];
+
+        // Filter images with weighted color matching
+        function filterImages() {
+            if (!searchQuery) {
+                filteredImages = allImages;
+                renderImages();
+                updateStats();
+                return;
+            }
+
+            const searchLower = searchQuery.toLowerCase().trim();
+
+            // Check if search term is a color keyword
+            const isColorSearch = colorKeywords.some(color =>
+                searchLower.includes(color) || color.includes(searchLower)
+            );
+
+            if (isColorSearch) {
+                // For color searches, use weighted matching
+                const scored = allImages.map(img => {
+                    let score = 0;
+
+                    // Check analyzed colors (highest priority)
+                    if (img.tags.analyzed_colors) {
+                        const analyzed = img.tags.analyzed_colors;
+
+                        // Dominant colors get highest weight (10 points each)
+                        if (analyzed.named) {
+                            analyzed.named.forEach((color, index) => {
+                                if (color.toLowerCase().includes(searchLower)) {
+                                    // First dominant color gets more weight
+                                    score += 10 - (index * 2);
+                                }
+                            });
+                        }
+                    }
+
+                    // Check color tags (medium priority - 5 points)
+                    const colorTags = img.tags.colors || [];
+                    if (colorTags.some(tag => tag.toLowerCase().includes(searchLower))) {
+                        score += 5;
+                    }
+
+                    return { img, score };
+                }).filter(item => item.score > 0);
+
+                // Sort by score descending
+                scored.sort((a, b) => b.score - a.score);
+                filteredImages = scored.map(item => item.img);
+            } else {
+                // For non-color searches, search title, description, and tag arrays
+                filteredImages = allImages.filter(img => {
+                    // Search title and description
+                    if (img.title.toLowerCase().includes(searchLower)) return true;
+                    if (img.description.toLowerCase().includes(searchLower)) return true;
+
+                    // Search only the array-based tags (not analyzed_colors object)
+                    const searchableTags = [
+                        ...(img.tags.conceptual || []),
+                        ...(img.tags.subject || []),
+                        ...(img.tags.colors || []),
+                        ...(img.tags.style || [])
+                    ];
+
+                    return searchableTags.some(tag =>
+                        tag.toLowerCase().includes(searchLower)
+                    );
+                });
+            }
+
+            renderImages();
+            updateStats();
+        }
+
+        // Render images
+        function renderImages() {
+            const grid = document.getElementById('grid');
+            const noResults = document.getElementById('noResults');
+
+            if (filteredImages.length === 0) {
+                grid.style.display = 'none';
+                noResults.style.display = 'block';
+                return;
+            }
+
+            grid.style.display = 'grid';
+            noResults.style.display = 'none';
+            grid.innerHTML = '';
+
+            filteredImages.forEach(img => {
+                const card = createCard(img);
+                grid.appendChild(card);
+            });
+        }
+
+        // Create image card
+        function createCard(img) {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.onclick = () => openModal(img);
+
+            const imagePath = `editorial_feed_images/${img.newFilename}`;
+
+            card.style.backgroundImage = `url('${imagePath}')`;
+            card.innerHTML = `
+                <div class="card-title-overlay">${img.title}</div>
+            `;
+
+            return card;
+        }
+
+        // Get color for tag name - enhanced with standard color names
+        function getColorForTag(tagName) {
+            const colorMap = {
+                // Standard CSS colors + analyzed color names
+                'red': '#DC143C', 'crimson': '#DC143C', 'firebrick': '#B22222',
+                'dark-red': '#8B0000', 'indian-red': '#CD5C5C', 'light-coral': '#F08080',
+                'dark-salmon': '#E9967A', 'salmon': '#FA8072', 'tomato': '#FF6347',
+                'orange-red': '#FF4500', 'dark-orange': '#FF8C00', 'orange': '#FFA500',
+
+                'pink': '#FFC0CB', 'light-pink': '#FFB6C1', 'hot-pink': '#FF69B4',
+                'deep-pink': '#FF1493', 'pale-violet-red': '#DB7093', 'medium-violet-red': '#C71585',
+
+                'purple': '#800080', 'medium-purple': '#9370DB', 'blue-violet': '#8A2BE2',
+                'dark-violet': '#9400D3', 'dark-orchid': '#9932CC', 'medium-orchid': '#BA55D3',
+                'plum': '#DDA0DD', 'thistle': '#D8BFD8', 'lavender': '#E6E6FA',
+                'violet': '#EE82EE', 'orchid': '#DA70D6', 'magenta': '#FF00FF',
+
+                'blue': '#0000FF', 'dark-blue': '#00008B', 'medium-blue': '#0000CD',
+                'midnight-blue': '#191970', 'deep-sky-blue': '#00BFFF', 'dodger-blue': '#1E90FF',
+                'cornflower-blue': '#6495ED', 'sky-blue': '#87CEEB', 'light-sky-blue': '#87CEFA',
+                'steel-blue': '#4682B4', 'light-steel-blue': '#B0C4DE', 'light-blue': '#ADD8E6',
+                'powder-blue': '#B0E0E6', 'pale-turquoise': '#AFEEEE', 'dark-turquoise': '#00CED1',
+                'turquoise': '#40E0D0', 'medium-turquoise': '#48D1CC', 'cyan': '#00FFFF',
+                'light-cyan': '#E0FFFF', 'cadet-blue': '#5F9EA0',
+
+                'teal': '#008080', 'light-sea-green': '#20B2AA', 'dark-slate-gray': '#2F4F4F',
+                'medium-aquamarine': '#66CDAA', 'aquamarine': '#7FFFD4',
+
+                'green': '#008000', 'dark-green': '#006400', 'forest-green': '#228B22',
+                'lime': '#00FF00', 'lime-green': '#32CD32', 'light-green': '#90EE90',
+                'pale-green': '#98FB98', 'dark-sea-green': '#8FBC8F', 'medium-spring-green': '#00FA9A',
+                'spring-green': '#00FF7F', 'sea-green': '#2E8B57', 'medium-sea-green': '#3CB371',
+                'lawn-green': '#7CFC00', 'chartreuse': '#7FFF00', 'green-yellow': '#ADFF2F',
+                'yellow-green': '#9ACD32', 'dark-olive-green': '#556B2F', 'olive-drab': '#6B8E23',
+                'olive': '#808000',
+
+                'yellow': '#FFFF00', 'light-yellow': '#FFFFE0', 'lemon-chiffon': '#FFFACD',
+                'light-goldenrod-yellow': '#FAFAD2', 'papaya-whip': '#FFEFD5', 'moccasin': '#FFE4B5',
+                'peach-puff': '#FFDAB9', 'pale-goldenrod': '#EEE8AA', 'khaki': '#F0E68C',
+                'dark-khaki': '#BDB76B', 'gold': '#FFD700',
+
+                'tan': '#D2B48C', 'chocolate': '#D2691E', 'peru': '#CD853F',
+                'sandy-brown': '#F4A460', 'burly-wood': '#DEB887', 'sienna': '#A0522D',
+                'saddle-brown': '#8B4513', 'brown': '#A52A2A', 'maroon': '#800000',
+
+                'white': '#FFFFFF', 'white-smoke': '#F5F5F5', 'gainsboro': '#DCDCDC',
+                'light-gray': '#D3D3D3', 'silver': '#C0C0C0', 'dark-gray': '#A9A9A9',
+                'gray': '#808080', 'dim-gray': '#696969', 'light-slate-gray': '#778899',
+                'slate-gray': '#708090', 'black': '#000000',
+
+                'gradient': '#888888', 'metallic': '#AAA9AD'
+            };
+
+            const normalizedTag = tagName.toLowerCase().trim();
+            return colorMap[normalizedTag] || null;
+        }
+
+        // Get contrasting text color
+        function getContrastColor(hexColor) {
+            if (!hexColor) return '#666';
+
+            const r = parseInt(hexColor.substr(1, 2), 16);
+            const g = parseInt(hexColor.substr(3, 2), 16);
+            const b = parseInt(hexColor.substr(5, 2), 16);
+            const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+            return luminance > 0.5 ? '#000000' : '#FFFFFF';
+        }
+
+        // Open modal
+        function openModal(img) {
+            const modal = document.getElementById('modal');
+            const modalContent = document.getElementById('modalContent');
+            const imagePath = `editorial_feed_images/${img.newFilename}`;
+
+            // Build color palette HTML if analyzed colors exist
+            let colorPaletteHTML = '';
+            if (img.tags.analyzed_colors && img.tags.analyzed_colors.dominant) {
+                const allColors = [
+                    ...img.tags.analyzed_colors.dominant,
+                    ...img.tags.analyzed_colors.accent
+                ];
+                if (allColors.length > 0) {
+                    colorPaletteHTML = `
+                        <div style="margin: 1.5rem 0;">
+                            <div class="color-palette-label">Analyzed Color Palette</div>
+                            <div class="color-palette">
+                                ${allColors.map(color =>
+                                    `<div class="color-swatch" style="background-color: ${color};" title="${color}"></div>`
+                                ).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            modalContent.innerHTML = `
+                <img src="${imagePath}" alt="${img.title}" class="modal-image">
+                <div class="modal-body">
+                    <h2 class="modal-title">${img.title}</h2>
+
+                    <a href="${imagePath}" download="${img.newFilename}" class="download-btn" style="margin-bottom: 1rem;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Download Full Size
+                    </a>
+
+                    <p class="modal-description">${img.description}</p>
+
+                    ${colorPaletteHTML}
+
+                    ${Object.entries(img.tags).filter(([category]) => category !== 'analyzed_colors').map(([category, tags]) => `
+                        <div class="modal-tags-section">
+                            <div class="modal-tags-label">${category}</div>
+                            <div class="modal-tags">
+                                ${tags.map(tag => {
+                                    if (category === 'colors') {
+                                        const bgColor = getColorForTag(tag);
+                                        if (bgColor) {
+                                            const textColor = getContrastColor(bgColor);
+                                            return `<span class="tag ${category}" style="background-color: ${bgColor}; color: ${textColor}; border: 1px solid rgba(0,0,0,0.1);">${tag}</span>`;
+                                        }
+                                    }
+                                    return `<span class="tag ${category}">${tag}</span>`;
+                                }).join('')}
+                            </div>
+                        </div>
+                    `).join('')}
+
+                    <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e0e0e0; color: #999; font-size: 0.875rem;">
+                        Original: ${img.originalFilename}<br>
+                        Filename: ${img.newFilename}
+                    </div>
+                </div>
+            `;
+
+            modal.classList.add('active');
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        // Close modal on background click
+        document.getElementById('modal').onclick = function(e) {
+            if (e.target.id === 'modal') {
+                closeModal();
+            }
+        };
+
+        // Search input
+        const searchInput = document.getElementById('searchInput');
+        const searchClear = document.getElementById('searchClear');
+
+        searchInput.addEventListener('input', (e) => {
+            searchQuery = e.target.value;
+            filterImages();
+
+            // Show/hide clear button
+            if (searchQuery) {
+                searchClear.classList.add('visible');
+            } else {
+                searchClear.classList.remove('visible');
+            }
+        });
+
+        // Clear button functionality
+        searchClear.addEventListener('click', () => {
+            searchQuery = '';
+            searchInput.value = '';
+            searchClear.classList.remove('visible');
+            searchInput.focus();
+            filterImages();
+        });
+
+        // Update stats
+        function updateStats() {
+            const stats = document.getElementById('stats');
+            stats.textContent = `Showing ${filteredImages.length} of ${allImages.length} images`;
+        }
+
+        // Aspect ratio toggle
+        function initAspectToggle() {
+            const toggleBtns = document.querySelectorAll('.aspect-toggle-btn');
+
+            // Load saved preference
+            const savedMode = localStorage.getItem('aspectMode') || 'preview';
+            if (savedMode === 'full') {
+                document.body.classList.add('full-image');
+                toggleBtns.forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.mode === 'full');
+                });
+            }
+
+            // Handle toggle
+            toggleBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const mode = btn.dataset.mode;
+
+                    // Update active state
+                    toggleBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+
+                    // Toggle body class
+                    if (mode === 'full') {
+                        document.body.classList.add('full-image');
+                    } else {
+                        document.body.classList.remove('full-image');
+                    }
+
+                    // Save preference
+                    localStorage.setItem('aspectMode', mode);
+                });
+            });
+        }
+
+        // Initialize
+        loadImages();
+        initAspectToggle();
+    </script>
+</body>
+</html>
