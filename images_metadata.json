@@ -6529,5 +6529,66 @@
         ]
       }
     }
+  },
+  {
+    "originalFilename": "Color Shift Technique Graphic.jpg",
+    "newFilename": "chess-bishop-king-orange-gradient.jpg",
+    "title": "Chess Strategy Orange",
+    "description": "Two chess pieces - a dark wooden bishop and a cream-colored king - positioned side by side on a vibrant orange to yellow gradient background. The pieces cast distinct shadows, creating depth and dimensionality in this minimalist composition that evokes themes of strategy and opposition.",
+    "tags": {
+      "conceptual": [
+        "strategy",
+        "competition",
+        "decision-making",
+        "leadership",
+        "opposition",
+        "game-theory",
+        "thinking",
+        "planning"
+      ],
+      "subject": [
+        "chess-pieces",
+        "bishop",
+        "king",
+        "board-game",
+        "wooden-pieces",
+        "shadows"
+      ],
+      "colors": [
+        "orange",
+        "yellow",
+        "gradient",
+        "warm-tones",
+        "black",
+        "cream",
+        "gold",
+        "dark-orange"
+      ],
+      "style": [
+        "minimalist",
+        "clean",
+        "photography",
+        "gradient",
+        "modern",
+        "simple",
+        "vibrant"
+      ],
+      "analyzed_colors": {
+        "dominant": [
+          "#f39c12",
+          "#e67e22",
+          "#d68910"
+        ],
+        "accent": [
+          "#2c1810",
+          "#f5deb3"
+        ],
+        "named": [
+          "dark-orange",
+          "goldenrod",
+          "wheat"
+        ]
+      }
+    }
   }
 ]
